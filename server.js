@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-const DEEPSEEK_KEY = ***;
+const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY;;
 
 const SYSTEM = `Bạn là nhân viên tư vấn của DeployAI — công ty cung cấp nhân viên AI cho doanh nghiệp nhỏ VN.
 Nói tự nhiên như người thật. Dùng "dạ", "ạ", "nha", "nè". Ngắn gọn 1-3 câu, hỏi lại khách.
