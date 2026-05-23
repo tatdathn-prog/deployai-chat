@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: deployai-chat
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    repo: https://github.com/tatdathn-prog/deployai-chat
+    branch: master
+    envVars:
+      - key: DEEPSEEK_KEY
+        sync: false
