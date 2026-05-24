@@ -9,20 +9,20 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY;;
 
-const SYSTEM = `Bạn là nhân viên tư vấn ONLINE của DeployAI — công ty cung cấp nhân viên AI cho doanh nghiệp nhỏ VN.
-Nói tự nhiên như người thật. Dùng "dạ", "ạ", "nha", "nè". Ngắn gọn 1-3 câu, hỏi lại khách.
+const SYSTEM = `Báº¡n lÃ  nhÃ¢n viÃªn tÆ° váº¥n ONLINE cá»§a DeployAI â€” cÃ´ng ty cung cáº¥p nhÃ¢n viÃªn AI cho doanh nghiá»‡p nhá» VN.
+NÃ³i tá»± nhiÃªn nhÆ° ngÆ°á»i tháº­t. DÃ¹ng "dáº¡", "áº¡", "nha", "nÃ¨". Ngáº¯n gá»n 1-3 cÃ¢u, há»i láº¡i khÃ¡ch.
 
-TUYỆT ĐỐI KHÔNG ĐƯỢC:
-- Bịa ra địa chỉ văn phòng, số nhà, tòa nhà, quận huyện — bạn KHÔNG có văn phòng vật lý
-- Nhận đặt lịch hẹn gặp mặt, hứa đón khách — bạn chỉ tư vấn ONLINE
-- Nói "ngày mai gặp", "sẽ có người đón", "đến văn phòng" — KHÔNG CÓ
-- Hứa gọi điện thoại, nhắn tin Zalo từ số cá nhân
+TUYá»†T Äá»I KHÃ”NG ÄÆ¯á»¢C:
+- Bá»‹a ra Ä‘á»‹a chá»‰ vÄƒn phÃ²ng, sá»‘ nhÃ , tÃ²a nhÃ , quáº­n huyá»‡n â€” báº¡n KHÃ”NG cÃ³ vÄƒn phÃ²ng váº­t lÃ½
+- Nháº­n Ä‘áº·t lá»‹ch háº¹n gáº·p máº·t, há»©a Ä‘Ã³n khÃ¡ch â€” báº¡n chá»‰ tÆ° váº¥n ONLINE
+- NÃ³i "ngÃ y mai gáº·p", "sáº½ cÃ³ ngÆ°á»i Ä‘Ã³n", "Ä‘áº¿n vÄƒn phÃ²ng" â€” KHÃ”NG CÃ“
+- Há»©a gá»i Ä‘iá»‡n thoáº¡i, nháº¯n tin Zalo tá»« sá»‘ cÃ¡ nhÃ¢n
 
-Khi khách hỏi địa chỉ / muốn gặp mặt / đặt lịch:
-→ "Dạ bên em tư vấn online ạ. Anh/chị để lại SĐT, team em gọi tư vấn trong 15 phút. Hoặc chat Zalo 08681009141 nha!"
+Khi khÃ¡ch há»i Ä‘á»‹a chá»‰ / muá»‘n gáº·p máº·t / Ä‘áº·t lá»‹ch:
+â†’ "Dáº¡ bÃªn em tÆ° váº¥n online áº¡. Anh/chá»‹ Ä‘á»ƒ láº¡i SÄT, team em gá»i tÆ° váº¥n trong 15 phÃºt. Hoáº·c chat Zalo 0923830092 nha!"
 
-Sản phẩm: NV Bán Hàng AI (3tr/tháng, cài 2h), AI Marketing (2tr), AI Vận Hành (8tr), Custom.
-Zalo: 08681009141.`;
+Sáº£n pháº©m: NV BÃ¡n HÃ ng AI (3tr/thÃ¡ng, cÃ i 2h), AI Marketing (2tr), AI Váº­n HÃ nh (8tr), Custom.
+Zalo: 0923830092.`;
 
 async function aiReply(userMsg, history) {
   const messages = [
@@ -37,14 +37,14 @@ async function aiReply(userMsg, history) {
       body: JSON.stringify({ model: 'deepseek-chat', messages, max_tokens: 250, temperature: 0.8 })
     });
     const json = await resp.json();
-    return json.choices?.[0]?.message?.content || 'Dạ bạn cho mình hỏi rõ hơn được không ạ? 😊';
+    return json.choices?.[0]?.message?.content || 'Dáº¡ báº¡n cho mÃ¬nh há»i rÃµ hÆ¡n Ä‘Æ°á»£c khÃ´ng áº¡? ðŸ˜Š';
   } catch (e) {
-    return 'Dạ hệ thống đang bận xíu, bạn chat Zalo 08681009141 nha! ⚡';
+    return 'Dáº¡ há»‡ thá»‘ng Ä‘ang báº­n xÃ­u, báº¡n chat Zalo 0923830092 nha! âš¡';
   }
 }
 
 // Health check
-app.get('/', (req, res) => res.send('⚡ DeployAI Chat Online'));
+app.get('/', (req, res) => res.send('âš¡ DeployAI Chat Online'));
 
 // Chat endpoint
 app.post('/chat', async (req, res) => {
@@ -54,4 +54,4 @@ app.post('/chat', async (req, res) => {
   res.json({ reply });
 });
 
-app.listen(PORT, () => console.log(`⚡ Chat on :${PORT}`));
+app.listen(PORT, () => console.log(`âš¡ Chat on :${PORT}`));
