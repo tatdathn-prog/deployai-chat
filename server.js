@@ -32,12 +32,24 @@ function sendTelegram(text) {
 function saveCRM(data) {
   if (!CRM_WEBHOOK) return;
   try {
+    console.log('CRM saving:', data.phone || 'no phone');
     const u = new URL(CRM_WEBHOOK);
     const body = JSON.stringify(data);
-    const req = https.request(u, { method: 'POST', headers: { 'Content-Type': 'application/json' } }, r => {});
-    req.on('error', () => {});
-    req.write(body); req.end();
-  } catch(e) {}
+    const options = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+    };
+    const req = https.request(u, options, r => {
+      let d = '';
+      r.on('data', c => d += c);
+      r.on('end', () => console.log('CRM response:', r.statusCode, d.slice(0,100)));
+    });
+    req.on('error', e => console.error('CRM error:', e.message));
+    req.write(body);
+    req.end();
+  } catch(e) {
+    console.error('CRM exception:', e.message);
+  }
 }
 
 // ── System Prompt ──
@@ -135,7 +147,7 @@ async function aiReply(userMsg, history) {
 }
 
 // ── Routes ──
-app.get('/', (req, res) => res.send('⚡ DeployAI Chat Online v2'));
+app.get('/', (req, res) => res.send('⚡ DeployAI Chat Online v3'));
 
 app.post('/chat', async (req, res) => {
   const { message, history, name, phone } = req.body;
