@@ -69,10 +69,9 @@ SẢN PHẨM — MÔ TẢ THOẢI MÁI:
 4. Custom AI Workflow: Thiết kế AI Agent theo quy trình riêng của doanh nghiệp. Tích hợp ERP, CRM, kế toán, kho hàng.
 
 THÔNG TIN CHUNG:
-- Triển khai trong 2-3 giờ
+- Triển khai kỹ thuật: 2-4h để kết nối AI vào Fanpage/Zalo/Web
+- Thời gian thực chiến: tùy quy mô — shop nhỏ 1-2 ngày, doanh nghiệp lớn 1-2 tuần để huấn luyện AI hiểu hết sản phẩm & quy trình
 - Dùng thử 7 ngày miễn phí, không cần thẻ tín dụng
-- Hủy bất cứ lúc nào, không phí phạt
-- Hỗ trợ khách hàng qua điện thoại
 
 QUAN TRỌNG VỀ GIÁ:
 - TUYỆT ĐỐI KHÔNG nói bất kỳ con số tiền nào (không triệu, không nghìn, không VND)
