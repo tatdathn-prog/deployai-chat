@@ -154,7 +154,18 @@ async function aiReply(userMsg, history) {
 }
 
 // ── Routes ──
-app.get('/', (req, res) => res.send('⚡ DeployAI Chat Online v3'));
+app.get('/', (req, res) => res.send('⚡ DeployAI Chat Online v4'));
+
+app.get('/debug', (req, res) => {
+  res.json({
+    hasDeepseek: !!DEEPSEEK_KEY,
+    hasGroq: !!GROQ_KEY,
+    hasHexUrl: !!HEX_URL,
+    hasTelegram: !!TELEGRAM_BOT,
+    hasCRM: !!CRM_WEBHOOK,
+    sessions: Object.keys(sessions).length
+  });
+});
 
 app.get('/debug', (req, res) => {
   res.json({

@@ -11,6 +11,8 @@ services:
     envVars:
       - key: DEEPSEEK_KEY
         sync: false
+      - key: GROQ_KEY
+        sync: false
       - key: TELEGRAM_BOT
         value: 8896024407:AAGm6tqzf_0CJaAsm-0yjU9F1Eaji7u7EK0
         sync: true
