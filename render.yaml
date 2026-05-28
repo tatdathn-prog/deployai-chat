@@ -18,6 +18,7 @@ services:
         value: '8681009141'
         sync: true
       - key: CRM_WEBHOOK
-        sync: false
+        value: https://script.google.com/macros/s/AKfycby0atd0AO9SX4H1gcWE23za4QqK7qUmoYyx0a0Pc5KENtMThI4Fyx8p1yxFMjcA5_4G/exec
+        sync: true
       - key: HEX_URL
         value: http://192.168.178.48:5001/api/v1/generate
