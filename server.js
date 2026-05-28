@@ -1,29 +1,69 @@
 // DeployAI Chat Server for Render
 import express from 'express';
 import cors from 'cors';
+import https from 'https';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY;;
+const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY;
+const TELEGRAM_BOT = process.env.TELEGRAM_BOT; // Telegram Bot Token
+const TELEGRAM_CHAT = process.env.TELEGRAM_CHAT || '8681009141';
+const CRM_WEBHOOK = process.env.CRM_WEBHOOK || '';
+const HEX_URL = process.env.HEX_URL || 'http://192.168.178.48:5001/api/v1/generate';
+const USE_LOCAL_AI = !!HEX_URL;
 
-const SYSTEM = `Báº¡n lÃ  nhÃ¢n viÃªn tÆ° váº¥n ONLINE cá»§a DeployAI â€” cÃ´ng ty cung cáº¥p nhÃ¢n viÃªn AI cho doanh nghiá»‡p nhá» VN.
-NÃ³i tá»± nhiÃªn nhÆ° ngÆ°á»i tháº­t. DÃ¹ng "dáº¡", "áº¡", "nha", "nÃ¨". Ngáº¯n gá»n 1-3 cÃ¢u, há»i láº¡i khÃ¡ch.
+// ── Telegram ──
+function sendTelegram(text) {
+  if (!TELEGRAM_BOT) return;
+  return new Promise((resolve) => {
+    const body = JSON.stringify({ chat_id: TELEGRAM_CHAT, text, parse_mode: 'HTML' });
+    const req = https.request(`https://api.telegram.org/bot${TELEGRAM_BOT}/sendMessage`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }
+    }, r => { let d=''; r.on('data',c=>d+=c); r.on('end',()=>resolve()); });
+    req.on('error', () => resolve());
+    req.write(body); req.end();
+  });
+}
 
-TUYá»†T Äá»I KHÃ”NG ÄÆ¯á»¢C:
-- Bá»‹a ra Ä‘á»‹a chá»‰ vÄƒn phÃ²ng, sá»‘ nhÃ , tÃ²a nhÃ , quáº­n huyá»‡n â€” báº¡n KHÃ”NG cÃ³ vÄƒn phÃ²ng váº­t lÃ½
-- Nháº­n Ä‘áº·t lá»‹ch háº¹n gáº·p máº·t, há»©a Ä‘Ã³n khÃ¡ch â€” báº¡n chá»‰ tÆ° váº¥n ONLINE
-- NÃ³i "ngÃ y mai gáº·p", "sáº½ cÃ³ ngÆ°á»i Ä‘Ã³n", "Ä‘áº¿n vÄƒn phÃ²ng" â€” KHÃ”NG CÃ“
-- Há»©a gá»i Ä‘iá»‡n thoáº¡i, nháº¯n tin Zalo tá»« sá»‘ cÃ¡ nhÃ¢n
+// ── CRM ──
+function saveCRM(data) {
+  if (!CRM_WEBHOOK) return;
+  try {
+    const u = new URL(CRM_WEBHOOK);
+    const body = JSON.stringify(data);
+    const req = https.request(u, { method: 'POST', headers: { 'Content-Type': 'application/json' } }, r => {});
+    req.on('error', () => {});
+    req.write(body); req.end();
+  } catch(e) {}
+}
 
-Khi khÃ¡ch há»i Ä‘á»‹a chá»‰ / muá»‘n gáº·p máº·t / Ä‘áº·t lá»‹ch:
-â†’ "Dáº¡ bÃªn em tÆ° váº¥n online áº¡. Anh/chá»‹ Ä‘á»ƒ láº¡i SÄT, team em gá»i tÆ° váº¥n trong 15 phÃºt. Hoáº·c chat Zalo 0923830092 nha!"
+// ── System Prompt ──
+const SYSTEM = `Bạn là nhân viên tư vấn ONLINE của DeployAI — công ty cung cấp nhân viên AI 24/7 cho doanh nghiệp Việt.
 
-Sáº£n pháº©m: NV BÃ¡n HÃ ng AI (3tr/thÃ¡ng, cÃ i 2h), AI Marketing (2tr), AI Váº­n HÃ nh (8tr), Custom.
-Zalo: 0923830092.`;
+CÁCH NÓI CHUYỆN:
+- Tự nhiên như người thật, dùng "dạ", "ạ", "nha", "nè", "luôn"
+- Ngắn gọn 1-3 câu, hỏi lại khách để hiểu nhu cầu
+- TUYỆT ĐỐI KHÔNG: markdown (**), bullet point, đánh số 1.2.3., in đậm
 
+VỀ GIÁ CẢ — QUAN TRỌNG NHẤT:
+- TUYỆT ĐỐI KHÔNG ĐƯA RA BẤT KỲ CON SỐ TIỀN NÀO
+- Nếu khách hỏi "bao nhiêu tiền", "giá bao nhiêu", "mấy triệu" → LUÔN trả lời: "Dạ bên em báo giá theo nhu cầu cụ thể ạ. Anh/chị để lại SĐT team em gọi tư vấn miễn phí trong 15 phút nha!"
+- KHÔNG nói "3 triệu", "2 triệu", "8 triệu", "12 triệu" hay bất kỳ con số nào
+
+SẢN PHẨM (mô tả, không giá):
+- NV Bán Hàng AI: trả lời FB/Zalo/Web 24/7, tư vấn sản phẩm, ghi đơn, báo cáo
+- AI Marketing: viết content, email marketing, SEO
+- AI Vận Hành: cho KS/nhà hàng/du lịch — tư vấn phòng, check lịch, đa ngôn ngữ
+- Custom: thiết kế AI riêng theo quy trình doanh nghiệp
+- Triển khai 2-3h, dùng thử 7 ngày free, không cần thẻ
+
+KHI KHÁCH ĐỂ LẠI SĐT: "Dạ em cảm ơn! Team sẽ gọi lại trong 15 phút ạ 🙏"
+Zalo hỗ trợ: 0923830092 | Web: deployai.vn`;
+
+// ── AI Reply ──
 async function aiReply(userMsg, history) {
   const messages = [
     { role: 'system', content: SYSTEM },
@@ -31,27 +71,77 @@ async function aiReply(userMsg, history) {
     { role: 'user', content: userMsg }
   ];
   try {
-    const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}` },
-      body: JSON.stringify({ model: 'deepseek-chat', messages, max_tokens: 250, temperature: 0.8 })
-    });
-    const json = await resp.json();
-    return json.choices?.[0]?.message?.content || 'Dáº¡ báº¡n cho mÃ¬nh há»i rÃµ hÆ¡n Ä‘Æ°á»£c khÃ´ng áº¡? ðŸ˜Š';
+    let reply;
+    if (USE_LOCAL_AI) {
+      // Hex Qwen 27B (FREE, LOCAL)
+      const prompt = `${SYSTEM}\n\nLịch sử:\n${messages.slice(1).map(m => `${m.role==='user'?'Khách':'Bolt'}: ${m.content}`).join('\n')}\nKhách: ${userMsg}\nBolt:`;
+      const resp = await fetch(HEX_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, max_length: 400, temperature: 0.7, top_p: 0.9 })
+      });
+      const json = await resp.json();
+      reply = json.results?.[0]?.text?.trim() || '';
+      // Clean thinking artifacts
+      reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '');
+      reply = reply.replace(/^[\s\n]*(Here's|Let me|Okay|I need|First|Now).*?\n/gi, '');
+    } else {
+      const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}` },
+        body: JSON.stringify({ model: 'deepseek-chat', messages, max_tokens: 400, temperature: 0.8 })
+      });
+      const json = await resp.json();
+      reply = json.choices?.[0]?.message?.content || '';
+    }
+    
+    // Strip markdown
+    reply = reply.replace(/\*\*/g, '');
+    reply = reply.replace(/^\d+\.\s*/gm, '');
+    reply = reply.trim();
+    
+    // Price filter: if any price-like patterns detected, override
+    if (/triệu|tr\b|nghìn\b|\d+k\b|\d+\.?\d{3}\.?\d{3}/i.test(reply)) {
+      reply = 'Dạ bên em báo giá theo nhu cầu cụ thể của từng doanh nghiệp ạ. Anh/chị để lại SĐT hoặc nhắn Zalo 0923830092 để team em gọi tư vấn miễn phí và gửi báo giá riêng nha!';
+    }
+    
+    if (reply.length > 400) reply = reply.substring(0, 400).replace(/\s+\S*$/, '');
+    
+    return reply || 'Dạ anh/chị cho em hỏi thêm về nhu cầu để tư vấn kỹ hơn ạ?';
   } catch (e) {
-    return 'Dáº¡ há»‡ thá»‘ng Ä‘ang báº­n xÃ­u, báº¡n chat Zalo 0923830092 nha! âš¡';
+    console.error('AI error:', e.message);
+    return 'Dạ hệ thống đang bận xíu, anh/chị nhắn Zalo 0923830092 để được tư vấn nhanh nha! ⚡';
   }
 }
 
-// Health check
-app.get('/', (req, res) => res.send('âš¡ DeployAI Chat Online'));
+// ── Routes ──
+app.get('/', (req, res) => res.send('⚡ DeployAI Chat Online v2'));
 
-// Chat endpoint
 app.post('/chat', async (req, res) => {
-  const { message, history } = req.body;
+  const { message, history, name, phone } = req.body;
   if (!message) return res.status(400).json({ error: 'No message' });
+  
+  // Detect lead: phone number or email
+  const hasPhone = phone || /0\d{8,10}/.test(message);
+  const hasEmail = message.includes('@');
+  const isLead = hasPhone || hasEmail;
+  
+  if (isLead) {
+    // Save to CRM + notify Telegram
+    const leadData = {
+      name: name || 'Khách web',
+      phone: phone || (message.match(/0\d{8,10}/) || [''])[0],
+      email: hasEmail ? message : '',
+      message: message.slice(0, 500),
+      source: 'Website Chat',
+      sessionId: Date.now().toString(36)
+    };
+    saveCRM(leadData);
+    sendTelegram(`<b>💬 Lead Mới Từ Website!</b>\n👤 ${leadData.name}\n📱 ${leadData.phone}\n💬 "${message.slice(0, 200)}"`);
+  }
+  
   const reply = await aiReply(message, history || []);
   res.json({ reply });
 });
 
-app.listen(PORT, () => console.log(`âš¡ Chat on :${PORT}`));
+app.listen(PORT, () => console.log(`⚡ Chat server on :${PORT}`));
