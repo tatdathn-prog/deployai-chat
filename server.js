@@ -12,7 +12,7 @@ const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY;
 const TELEGRAM_BOT = process.env.TELEGRAM_BOT || '8896024407:AAGm6tqzf_0CJaAsm-0yjU9F1Eaji7u7EK0';
 const TELEGRAM_CHAT = process.env.TELEGRAM_CHAT || '8681009141';
 const CRM_WEBHOOK = process.env.CRM_WEBHOOK || 'https://script.google.com/macros/s/AKfycby0atd0AO9SX4H1gcWE23za4QqK7qUmoYyx0a0Pc5KENtMThI4Fyx8p1yxFMjcA5_4G/exec';
-const HEX_URL = process.env.HEX_URL || '';
+const sessions = {}; // sessionId -> { messages: [], phone: '', saved: false }
 
 // ── Telegram ──
 function sendTelegram(text) {
@@ -146,27 +146,43 @@ app.post('/chat', async (req, res) => {
   const { message, history, name, phone, sessionId } = req.body;
   if (!message) return res.status(400).json({ error: 'No message' });
   
-  // Detect lead: phone number or email
-  const hasPhone = phone || /0\d{8,10}/.test(message);
+  const sid = sessionId || 'default';
+  if (!sessions[sid]) {
+    sessions[sid] = { messages: [], phone: '', saved: false, time: new Date().toISOString() };
+  }
+  const sess = sessions[sid];
+  
+  // Detect lead
+  const foundPhone = phone || (message.match(/0\d{8,10}/) || [''])[0];
   const hasEmail = message.includes('@');
-  const isLead = hasPhone || hasEmail;
+  const isLead = foundPhone || hasEmail;
   
-  // Always save conversation to CRM for daily stats
-  const convData = {
-    name: name || 'Khách web',
-    phone: phone || (hasPhone ? (message.match(/0\d{8,10}/) || [''])[0] : ''),
-    email: hasEmail ? message : '',
-    message: message.slice(0, 500),
-    source: 'Website Chat',
-    sessionId: sessionId || Date.now().toString(36)
-  };
-  await saveCRM(convData);
+  // Accumulate conversation
+  if (foundPhone && !sess.phone) sess.phone = foundPhone;
+  sess.messages.push({ role: 'customer', text: message, time: new Date().toISOString() });
   
-  if (isLead) {
-    sendTelegram(`<b>💬 Lead Mới!</b>\n👤 ${convData.name}\n📱 ${convData.phone}\n💬 "${message.slice(0, 200)}"`);
+  const reply = await aiReply(message, history || sess.messages.map(m => ({ role: m.role, text: m.text })));
+  sess.messages.push({ role: 'ai', text: reply, time: new Date().toISOString() });
+  
+  // Save to CRM: only when lead detected OR first message of session
+  if (!sess.saved || isLead) {
+    const fullConv = sess.messages.map(m => `[${m.role==='customer'?'KH':'AI'}] ${m.text}`).join(' | ');
+    await saveCRM({
+      name: name || 'Khách web',
+      phone: sess.phone || '',
+      email: hasEmail ? message : '',
+      message: fullConv.slice(0, 2000),
+      source: 'Website Chat',
+      sessionId: sid
+    });
+    sess.saved = true;
+    
+    if (isLead && !sess._telegramSent) {
+      sess._telegramSent = true;
+      sendTelegram(`<b>💬 Lead Mới!</b>\n👤 ${name||'Khách web'}\n📱 ${sess.phone}\n💬 "${message.slice(0, 200)}"`);
+    }
   }
   
-  const reply = await aiReply(message, history || []);
   res.json({ reply });
 });
 
