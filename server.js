@@ -194,7 +194,9 @@ app.post('/chat', async (req, res) => {
     
     if (isLead && !sess._telegramSent) {
       sess._telegramSent = true;
-      sendTelegram(`<b>💬 Lead Mới!</b>\n👤 ${sess.name||custName||'Khách web'}\n📱 ${sess.phone}\n💬 "${message.slice(0, 200)}"`);
+      // Build conversation summary
+      const summary = sess.messages.filter(m => m.role === 'customer').map(m => m.text.slice(0, 100)).join(' → ');
+      sendTelegram(`<b>💬 Lead Mới!</b>\n👤 ${sess.name||custName||'Khách web'}\n📱 ${sess.phone}\n📝 <b>Nội dung chat:</b>\n${summary.slice(0, 500)}\n💬 <i>"${message.slice(0, 200)}"</i>`);
     }
   }
   
