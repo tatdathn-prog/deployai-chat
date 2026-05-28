@@ -13,8 +13,10 @@ services:
         sync: false
       - key: TELEGRAM_BOT
         value: 8896024407:AAGm6tqzf_0CJaAsm-0yjU9F1Eaji7u7EK0
+        sync: true
       - key: TELEGRAM_CHAT
         value: '8681009141'
+        sync: true
       - key: CRM_WEBHOOK
         sync: false
       - key: HEX_URL
