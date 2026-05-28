@@ -4,6 +4,7 @@ const https = require('https');
 const TELEGRAM_TOKEN = '889602…7EK0';
 const TELEGRAM_CHAT = '8681009141';
 const DEEPSEEK_KEY = 'sk-placeholder';
+const CRM_WEBHOOK = process.env.CRM_WEBHOOK || ''; // Google Apps Script URL
 const USE_LOCAL_AI = true;
 const HEX_URL = 'http://192.168.178.48:5001/api/v1/generate';
 const PORT = 3457;
@@ -16,6 +17,22 @@ function sendTelegram(text) {
       method: 'POST', headers: { 'Content-Type': 'application/json' }
     }, (res) => { let d=''; res.on('data',c=>d+=c); res.on('end',()=>resolve(JSON.parse(d))); });
     req.on('error', () => resolve({ ok: false }));
+    req.write(body); req.end();
+  });
+}
+
+function saveToCRM(data) {
+  if (!CRM_WEBHOOK) return Promise.resolve({ok:false});
+  return new Promise((resolve) => {
+    const body = JSON.stringify(data);
+    const url = new URL(CRM_WEBHOOK);
+    const req = https.request(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }
+    }, (res) => {
+      let d = ''; res.on('data', c => d += c);
+      res.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { resolve({ok:false}); } });
+    });
+    req.on('error', () => resolve({ok:false}));
     req.write(body); req.end();
   });
 }
@@ -105,6 +122,7 @@ const server = http.createServer(async (req, res) => {
 
         // Notify Telegram for lead capture
         if (phone || (userMsg && (userMsg.match(/0\d{8,10}/) || userMsg.includes('@')))) {
+          saveToCRM({ name: name||"Khach web", phone: phone||"", email: userMsg.includes("@")?userMsg:"", message: userMsg.slice(0,500), source: "Website Chat", sessionId: sid });
           sendTelegram(`💬 <b>Chat Web — Lead Mới!</b>\n👤 ${name||'Khách web'}\n📱 ${phone||'(xem tin nhắn)'}\n💬 "${userMsg.slice(0,200)}"`);
         }
 
