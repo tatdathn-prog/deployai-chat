@@ -142,6 +142,17 @@ async function aiReply(userMsg, history) {
 // ── Routes ──
 app.get('/', (req, res) => res.send('⚡ DeployAI Chat Online v3'));
 
+app.get('/debug', (req, res) => {
+  res.json({
+    hasDeepseek: !!DEEPSEEK_KEY,
+    deepseekPrefix: (DEEPSEEK_KEY||'').slice(0,5),
+    hasHexUrl: !!HEX_URL,
+    hasTelegram: !!TELEGRAM_BOT,
+    hasCRM: !!CRM_WEBHOOK,
+    sessions: Object.keys(sessions).length
+  });
+});
+
 app.post('/chat', async (req, res) => {
   const { message, history, name, phone, sessionId } = req.body;
   if (!message) return res.status(400).json({ error: 'No message' });
