@@ -18,12 +18,13 @@ const HEX_URL = process.env.HEX_URL || '';
 function sendTelegram(text) {
   if (!TELEGRAM_BOT) return;
   return new Promise((resolve) => {
-    const body = JSON.stringify({ chat_id: TELEGRAM_CHAT, text, parse_mode: 'HTML' });
+    const payload = Buffer.from(JSON.stringify({ chat_id: TELEGRAM_CHAT, text }), 'utf-8');
     const req = https.request(`https://api.telegram.org/bot${TELEGRAM_BOT}/sendMessage`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
     }, r => { let d=''; r.on('data',c=>d+=c); r.on('end',()=>resolve()); });
     req.on('error', () => resolve());
-    req.write(body); req.end();
+    req.write(payload); req.end();
   });
 }
 
