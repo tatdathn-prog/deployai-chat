@@ -46,8 +46,10 @@ CÁCH NÓI CHUYỆN:
 - 1-3 câu, ngắn gọn, không dài dòng
 - Hỏi lại khách để hiểu rõ nhu cầu
 - Nếu khách hỏi giá → nói "bên em báo giá theo nhu cầu cụ thể, anh/chị để lại SĐT em tư vấn miễn phí nha"
-- KHÔNG đưa ra con số cụ thể về giá
-- KHÔNG DÙNG: dấu sao **, bullet point dài, emoji thái quá, markdown
+- TUYỆT ĐỐI KHÔNG đưa ra bất kỳ con số tiền nào (không triệu, không nghìn, không VND)
+- Nếu khách hỏi "bao nhiêu tiền" hay "giá bao nhiêu" → phải trả lời "bên em tư vấn báo giá riêng theo nhu cầu ạ"
+- KHÔNG DÙNG: dấu sao **, bullet point dài, emoji thái quá, markdown, đánh số 1. 2. 3.
+- Tuyệt đối không in đậm, không in nghiêng, không số thứ tự. Chỉ text thuần.
 
 KIẾN THỨC:
 - NV Bán Hàng AI: trả lời FB/Zalo 24/7, tư vấn SP, ghi đơn, CRM, báo cáo doanh thu
@@ -62,7 +64,9 @@ QUAN TRỌNG:
 - Trả lời như 1 con người đang chat. Không kịch bản. Không máy móc.
 - Khi khách hỏi về giá → luôn mời để lại SĐT để được tư vấn báo giá riêng
 - Khi khách để lại SĐT → cảm ơn và nói sẽ gọi lại trong 15 phút
-- TUYỆT ĐỐI KHÔNG ĐƯA RA GIÁ CỤ THỂ`;
+- TUYỆT ĐỐI KHÔNG ĐƯA RA GIÁ CỤ THỂ. NẾU VI PHẠM SẼ BỊ PHẠT.
+- Không dùng markdown, không bullet point, không **, không số thứ tự. Nói chuyện tự nhiên.
+- Mỗi câu trả lời tối đa 3 câu, kết thúc bằng câu hỏi cho khách.`;
 
   const context = history.slice(-5).map(m => `${m.role==='customer'?'Khách':'Bolt'}: ${m.text}`).join('\n');
   const prompt = `${system}\n\nLịch sử chat:\n${context}\nKhách: ${userMsg}\nBolt:`;
@@ -73,7 +77,7 @@ QUAN TRỌNG:
       const resp = await fetch(HEX_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, max_length: 250, temperature: 0.7, top_p: 0.9 })
+        body: JSON.stringify({ prompt, max_length: 450, temperature: 0.7, top_p: 0.9 })
       });
       const json = await resp.json();
       reply = json.results?.[0]?.text?.trim() || '';
@@ -84,6 +88,20 @@ QUAN TRỌNG:
       reply = reply.replace(/^[\s\n]*[-•]\s.*$/gm, '');
       reply = reply.replace(/\n{3,}/g, '\n\n');
       reply = reply.trim();
+      
+      // Strip markdown
+      reply = reply.replace(/\*\*/g, '');
+      reply = reply.replace(/^\d+\.\s*/gm, '');
+      
+      // Price filter: if AI outputs prices, override with safe response
+      if (/\d+[\s.]*(triệu|tr|nghìn|k|VND|d|dong)/i.test(reply) || /\d{1,3}\.?\d{3}\.?\d{3}/.test(reply)) {
+        reply = 'Dạ bên em báo giá theo nhu cầu cụ thể của từng doanh nghiệp ạ. Anh/chị để lại SĐT hoặc nhắn Zalo 0923830092 để em tư vấn chi tiết và gửi báo giá riêng nha!';
+      }
+      
+      // Truncation fix: prevent cut-off messages
+      if (reply.length > 350) {
+        reply = reply.substring(0, 350).replace(/\s+\S*$/, '');
+      }
     } else {
       const body = JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'system', content: system }, ...history.map(m => ({ role: m.role === 'customer' ? 'user' : 'assistant', content: m.text })), { role: 'user', content: userMsg }], max_tokens: 300, temperature: 0.7 });
       const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
