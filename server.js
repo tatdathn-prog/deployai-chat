@@ -12,8 +12,7 @@ const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY;
 const TELEGRAM_BOT = process.env.TELEGRAM_BOT; // Telegram Bot Token
 const TELEGRAM_CHAT = process.env.TELEGRAM_CHAT || '8681009141';
 const CRM_WEBHOOK = process.env.CRM_WEBHOOK || '';
-const HEX_URL = process.env.HEX_URL || 'http://192.168.178.48:5001/api/v1/generate';
-const USE_LOCAL_AI = !!HEX_URL;
+const HEX_URL = process.env.HEX_URL || '';
 
 // ── Telegram ──
 function sendTelegram(text) {
@@ -71,21 +70,29 @@ async function aiReply(userMsg, history) {
     { role: 'user', content: userMsg }
   ];
   try {
-    let reply;
-    if (USE_LOCAL_AI) {
-      // Hex Qwen 27B (FREE, LOCAL)
-      const prompt = `${SYSTEM}\n\nLịch sử:\n${messages.slice(1).map(m => `${m.role==='user'?'Khách':'Bolt'}: ${m.content}`).join('\n')}\nKhách: ${userMsg}\nBolt:`;
-      const resp = await fetch(HEX_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, max_length: 400, temperature: 0.7, top_p: 0.9 })
-      });
-      const json = await resp.json();
-      reply = json.results?.[0]?.text?.trim() || '';
-      // Clean thinking artifacts
-      reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '');
-      reply = reply.replace(/^[\s\n]*(Here's|Let me|Okay|I need|First|Now).*?\n/gi, '');
-    } else {
+    let reply = '';
+    
+    // Try Hex Qwen first (FREE), fallback to DeepSeek
+    if (HEX_URL) {
+      try {
+        const prompt = `${SYSTEM}\n\nLịch sử:\n${messages.slice(1).map(m => `${m.role==='user'?'Khách':'Bolt'}: ${m.content}`).join('\n')}\nKhách: ${userMsg}\nBolt:`;
+        const resp = await fetch(HEX_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, max_length: 400, temperature: 0.7, top_p: 0.9 }),
+          signal: AbortSignal.timeout(8000)
+        });
+        const json = await resp.json();
+        reply = json.results?.[0]?.text?.trim() || '';
+        reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '');
+        reply = reply.replace(/^[\s\n]*(Here's|Let me|Okay|I need|First|Now).*?\n/gi, '');
+      } catch(e) {
+        console.log('Hex failed, trying DeepSeek...');
+      }
+    }
+    
+    // Fallback to DeepSeek
+    if (!reply && DEEPSEEK_KEY) {
       const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}` },
