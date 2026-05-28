@@ -80,7 +80,12 @@ QUAN TRỌNG VỀ GIÁ:
 - Chỉ xin SĐT khi khách HỎI về giá. Còn lại tập trung tư vấn sản phẩm.
 - KHÔNG gợi ý khách liên hệ Zalo. Chỉ xin SĐT.
 
-KHI KHÁCH ĐỂ LẠI SĐT: "Dạ em cảm ơn! Team sẽ gọi lại trong 15 phút để tư vấn chi tiết ạ 🙏"`;
+KHI KHÁCH ĐỂ LẠI SĐT: "Dạ em cảm ơn! Team sẽ gọi lại trong 15 phút ạ 🙏"
+
+QUAN TRỌNG:
+- Câu đầu tiên CHỦ ĐỘNG hỏi tên khách: "Dạ anh/chị cho em xin tên để tiện xưng hô ạ?"
+- Khi khác cho tên → dùng tên đó xưng hô trong suốt cuộc trò chuyện
+- Chỉ xin SĐT khi khách hỏi giá hoặc sẵn sàng nhận tư vấn`;
 
 // ── AI Reply ──
 async function aiReply(userMsg, history) {
@@ -163,27 +168,33 @@ app.post('/chat', async (req, res) => {
   
   // Accumulate conversation
   if (foundPhone && !sess.phone) sess.phone = foundPhone;
+  // Extract name from message if provided
+  var custName = name || '';
+  var nameMatch = message.match(/(?:tên|ten|tôi là|toi la|mình là|minh la)\s+(?:là\s+)?(\w[\w\s]{1,30}?)(?:[\.\,\!\?]|$)/i);
+  if (!custName && nameMatch) custName = nameMatch[1].trim();
+  if (custName) sess.name = custName;
+  
   sess.messages.push({ role: 'customer', text: message, time: new Date().toISOString() });
   
   const reply = await aiReply(message, history || sess.messages.map(m => ({ role: m.role, text: m.text })));
   sess.messages.push({ role: 'ai', text: reply, time: new Date().toISOString() });
   
-  // Save to CRM: only when lead detected OR first message of session
-  if (!sess.saved || isLead) {
-    const fullConv = sess.messages.map(m => `[${m.role==='customer'?'KH':'AI'}] ${m.text}`).join(' | ');
+  // Save/Update CRM with full session
+  const fullConv = sess.messages.map(m => `[${m.role==='customer'?'KH':'AI'}] ${m.text}`).join('\n');
+  if (!sess._lastSave || fullConv.length > sess._lastSave.length + 100 || isLead) {
+    sess._lastSave = fullConv;
     await saveCRM({
-      name: name || 'Khách web',
+      name: sess.name || custName || 'Khách web',
       phone: sess.phone || '',
       email: hasEmail ? message : '',
-      message: fullConv.slice(0, 2000),
+      message: fullConv.slice(0, 5000),
       source: 'Website Chat',
       sessionId: sid
     });
-    sess.saved = true;
     
     if (isLead && !sess._telegramSent) {
       sess._telegramSent = true;
-      sendTelegram(`<b>💬 Lead Mới!</b>\n👤 ${name||'Khách web'}\n📱 ${sess.phone}\n💬 "${message.slice(0, 200)}"`);
+      sendTelegram(`<b>💬 Lead Mới!</b>\n👤 ${sess.name||custName||'Khách web'}\n📱 ${sess.phone}\n💬 "${message.slice(0, 200)}"`);
     }
   }
   
