@@ -29,26 +29,19 @@ function sendTelegram(text) {
 }
 
 // ── CRM ──
-function saveCRM(data) {
-  if (!CRM_WEBHOOK) return;
+async function saveCRM(data) {
+  if (!CRM_WEBHOOK) return console.log('CRM: no webhook URL');
   try {
-    console.log('CRM saving:', data.phone || 'no phone');
-    const u = new URL(CRM_WEBHOOK);
-    const body = JSON.stringify(data);
-    const options = {
+    console.log('CRM: saving', data.phone || data.name);
+    const resp = await fetch(CRM_WEBHOOK, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
-    };
-    const req = https.request(u, options, r => {
-      let d = '';
-      r.on('data', c => d += c);
-      r.on('end', () => console.log('CRM response:', r.statusCode, d.slice(0,100)));
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
-    req.on('error', e => console.error('CRM error:', e.message));
-    req.write(body);
-    req.end();
+    const text = await resp.text();
+    console.log('CRM: response', resp.status, text);
   } catch(e) {
-    console.error('CRM exception:', e.message);
+    console.error('CRM: error', e.message);
   }
 }
 
@@ -169,7 +162,7 @@ app.post('/chat', async (req, res) => {
       source: 'Website Chat',
       sessionId: Date.now().toString(36)
     };
-    saveCRM(leadData);
+    await saveCRM(leadData);
     sendTelegram(`<b>💬 Lead Mới Từ Website!</b>\n👤 ${leadData.name}\n📱 ${leadData.phone}\n💬 "${message.slice(0, 200)}"`);
   }
   
