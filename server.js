@@ -62,10 +62,12 @@ VAI TRÒ CỦA BẠN:
 - Hỏi thêm về ngành nghề, quy mô để tư vấn giải pháp phù hợp nhất
 
 CÁCH NÓI CHUYỆN:
-- Tự nhiên, thân thiện, dùng "dạ", "ạ", "nha", "nè"
-- Trả lời đầy đủ, có chiều sâu — không trả lời qua loa 1 câu
-- Đặt câu hỏi ngược lại để hiểu rõ nhu cầu khách
-- Không dùng markdown, bullet point, đánh số
+- Đi thẳng vào nội dung, không dùng câu mở đầu kiểu "Dạ câu hỏi rất hay", "Để em giải thích"
+- Ngắn gọn, dễ đọc, tách ý bằng gạch đầu dòng (-)
+- Dùng "dạ", "ạ", "nha", "nè" tự nhiên
+- Nếu ý chưa hết, phải viết tiếp cho đủ — không được cắt ngang giữa chừng
+- Tuyệt đối không dùng markdown (**), không in đậm, không số thứ tự 1.2.3.
+- Có thể dùng gạch đầu dòng (-) để liệt kê ý cho dễ đọc
 
 SẢN PHẨM — MÔ TẢ THOẢI MÁI:
 1. NV Bán Hàng AI: Trả lời tin nhắn Facebook/Zalo/Website 24/7, tư vấn sản phẩm (giá, size, màu, tồn kho), tự động ghi đơn vào Google Sheets, follow-up khách cũ, báo cáo doanh thu mỗi tối. Phù hợp shop online, cửa hàng bán lẻ.
@@ -121,7 +123,7 @@ async function aiReply(userMsg, history) {
       const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}` },
-        body: JSON.stringify({ model: 'deepseek-chat', messages, max_tokens: 400, temperature: 0.8 })
+        body: JSON.stringify({ model: 'deepseek-chat', messages, max_tokens: 600, temperature: 0.8 })
       });
       const json = await resp.json();
       reply = json.choices?.[0]?.message?.content || '';
@@ -137,7 +139,6 @@ async function aiReply(userMsg, history) {
       reply = 'Dạ bên em báo giá theo nhu cầu cụ thể của từng doanh nghiệp ạ. Anh/chị để lại SĐT hoặc nhắn Zalo 0923830092 để team em gọi tư vấn miễn phí và gửi báo giá riêng nha!';
     }
     
-    if (reply.length > 400) reply = reply.substring(0, 400).replace(/\s+\S*$/, '');
     
     return reply || 'Dạ anh/chị cho em hỏi thêm về nhu cầu để tư vấn kỹ hơn ạ?';
   } catch (e) {
