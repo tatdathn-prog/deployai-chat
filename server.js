@@ -144,7 +144,7 @@ async function aiReply(userMsg, history) {
 app.get('/', (req, res) => res.send('⚡ DeployAI Chat Online v3'));
 
 app.post('/chat', async (req, res) => {
-  const { message, history, name, phone } = req.body;
+  const { message, history, name, phone, sessionId } = req.body;
   if (!message) return res.status(400).json({ error: 'No message' });
   
   // Detect lead: phone number or email
@@ -152,18 +152,19 @@ app.post('/chat', async (req, res) => {
   const hasEmail = message.includes('@');
   const isLead = hasPhone || hasEmail;
   
+  // Always save conversation to CRM for daily stats
+  const convData = {
+    name: name || 'Khách web',
+    phone: phone || (hasPhone ? (message.match(/0\d{8,10}/) || [''])[0] : ''),
+    email: hasEmail ? message : '',
+    message: message.slice(0, 500),
+    source: 'Website Chat',
+    sessionId: sessionId || Date.now().toString(36)
+  };
+  await saveCRM(convData);
+  
   if (isLead) {
-    // Save to CRM + notify Telegram
-    const leadData = {
-      name: name || 'Khách web',
-      phone: phone || (message.match(/0\d{8,10}/) || [''])[0],
-      email: hasEmail ? message : '',
-      message: message.slice(0, 500),
-      source: 'Website Chat',
-      sessionId: Date.now().toString(36)
-    };
-    await saveCRM(leadData);
-    sendTelegram(`<b>💬 Lead Mới Từ Website!</b>\n👤 ${leadData.name}\n📱 ${leadData.phone}\n💬 "${message.slice(0, 200)}"`);
+    sendTelegram(`<b>💬 Lead Mới!</b>\n👤 ${convData.name}\n📱 ${convData.phone}\n💬 "${message.slice(0, 200)}"`);
   }
   
   const reply = await aiReply(message, history || []);
