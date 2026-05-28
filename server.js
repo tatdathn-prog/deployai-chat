@@ -109,7 +109,7 @@ async function aiReply(userMsg, history) {
     reply = reply.trim();
     
     // Price filter: if any price-like patterns detected, override
-    if (/triệu|tr\b|nghìn\b|\d+k\b|\d+\.?\d{3}\.?\d{3}/i.test(reply)) {
+    if (/\d[\d.]*\s*(triệu|tr|nghìn|k|VND|đồng)/i.test(reply) || /\d{1,3}(?:\.\d{3}){2,}/.test(reply)) {
       reply = 'Dạ bên em báo giá theo nhu cầu cụ thể của từng doanh nghiệp ạ. Anh/chị để lại SĐT hoặc nhắn Zalo 0923830092 để team em gọi tư vấn miễn phí và gửi báo giá riêng nha!';
     }
     
