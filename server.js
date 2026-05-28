@@ -89,47 +89,15 @@ async function aiReply(userMsg, history) {
     ...(history || []).slice(-6).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })),
     { role: 'user', content: userMsg }
   ];
-  try {
+    try {
     let reply = '';
     
-    // Try Hex Qwen first (FREE), fallback to DeepSeek
-    if (HEX_URL) {
-      try {
-        const prompt = `${SYSTEM}\n\nLịch sử:\n${messages.slice(1).map(m => `${m.role==='user'?'Khách':'Bolt'}: ${m.content}`).join('\n')}\nKhách: ${userMsg}\nBolt:`;
-        const resp = await fetch(HEX_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, max_length: 400, temperature: 0.7, top_p: 0.9 }),
-          signal: AbortSignal.timeout(8000)
-        });
-        const json = await resp.json();
-        reply = json.results?.[0]?.text?.trim() || '';
-        reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '');
-        reply = reply.replace(/^[\s\n]*(Here's|Let me|Okay|I need|First|Now).*?\n/gi, '');
-      } catch(e) {
-        console.log('Hex failed, trying DeepSeek...');
-      }
-    }
-    
-    // Fallback to Groq (free, fast)
-    if (!reply && GROQ_KEY) {
-      try {
-        const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
-          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: 600, temperature: 0.8 })
-        });
-        const json = await resp.json();
-        reply = json.choices?.[0]?.message?.content || '';
-      } catch(e) { console.log('Groq failed:', e.message); }
-    }
-    
-    // Last resort: DeepSeek
-    if (!reply && DEEPSEEK_KEY) {
-      const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    // Groq API (free, fast)
+    if (GROQ_KEY) {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_KEY}` },
-        body: JSON.stringify({ model: 'deepseek-chat', messages, max_tokens: 600, temperature: 0.8 })
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: 600, temperature: 0.8 })
       });
       const json = await resp.json();
       reply = json.choices?.[0]?.message?.content || '';
@@ -140,7 +108,7 @@ async function aiReply(userMsg, history) {
     reply = reply.replace(/^\d+\.\s*/gm, '');
     reply = reply.trim();
     
-    // Price filter: if any price-like patterns detected, override
+// Price filter: if any price-like patterns detected, override
     if (/\d[\d.]*\s*(triệu|tr|nghìn|k|VND|đồng)/i.test(reply) || /\d{1,3}(?:\.\d{3}){2,}/.test(reply)) {
       reply = 'Dạ bên em báo giá theo nhu cầu cụ thể của từng doanh nghiệp ạ. Anh/chị để lại SĐT hoặc nhắn Zalo 0923830092 để team em gọi tư vấn miễn phí và gửi báo giá riêng nha!';
     }
