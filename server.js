@@ -10,7 +10,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY;
 const GROQ_KEY = process.env.GROQ_KEY || '';
-const TELEGRAM_BOT = process.env.TELEGRAM_BOT || '8896024407:AAGm6tqzf_0CJaAsm-0yjU9F1Eaji7u7EK0';
+const TELEGRAM_BOT = process.env.TELEGRAM_BOT;
 const TELEGRAM_CHAT = process.env.TELEGRAM_CHAT || '8681009141';
 const CRM_WEBHOOK = process.env.CRM_WEBHOOK || 'https://script.google.com/macros/s/AKfycby0atd0AO9SX4H1gcWE23za4QqK7qUmoYyx0a0Pc5KENtMThI4Fyx8p1yxFMjcA5_4G/exec';
 const sessions = {}; // sessionId -> { messages: [], phone: '', saved: false }
